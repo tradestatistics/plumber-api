@@ -7,21 +7,17 @@ readRenviron("/tradestatistics/plumber-api")
 
 con <- pool::dbPool(
   drv = RPostgres::Postgres(),
-  dbname = "tradestatistics",
-  host = "localhost",
-  user = Sys.getenv("TRADESTATISTICS_SQL_USR"),
-  password = Sys.getenv("TRADESTATISTICS_SQL_PWD")
+  dbname = Sys.getenv("TRADESTATISTICS_NAME"),
+  host = Sys.getenv("TRADESTATISTICS_HOST"),
+  user = Sys.getenv("TRADESTATISTICS_USER"),
+  password = Sys.getenv("TRADESTATISTICS_PASSWORD"),
+  port = Sys.getenv("TRADESTATISTICS_PORT")
 )
 
 # Static data -------------------------------------------------------------
 
 countries <- function() {
   tbl(con, "countries") %>%
-    collect()
-}
-
-countries_colors <- function() {
-  tbl(con, "countries_colors") %>%
     collect()
 }
 
@@ -35,13 +31,8 @@ commodities_short <- function() {
     collect()
 }
 
-sections <- function() {
-  tbl(con, "sections") %>%
-    collect()
-}
-
-sections_colors <- function() {
-  tbl(con, "sections_colors") %>%
+gdp_deflator <- function() {
+  tbl(con, "gdp_deflator") %>%
     collect()
 }
 
@@ -49,38 +40,38 @@ sections_colors <- function() {
 
 ## Africa
 countries_africa <- countries() %>%
-  filter(continent_name_english == "Africa") %>%
+  filter(continent_name == "Africa") %>%
   select(country_iso) %>%
   pull()
 
 ## Americas
 countries_americas <- countries() %>%
-  filter(continent_name_english == "Americas") %>%
+  filter(continent_name == "Americas") %>%
   select(country_iso) %>%
   pull()
 
 ## Asia
 countries_asia <- countries() %>%
-  filter(continent_name_english == "Asia") %>%
+  filter(continent_name == "Asia") %>%
   select(country_iso) %>%
   pull()
 
 ## Europe
 countries_europe <- countries() %>%
-  filter(continent_name_english == "Europe") %>%
+  filter(continent_name == "Europe") %>%
   select(country_iso) %>%
   pull()
 
 ## Oceania
 countries_oceania <- countries() %>%
-  filter(continent_name_english == "Oceania") %>%
+  filter(continent_name == "Oceania") %>%
   select(country_iso) %>%
   pull()
 
 # Clean inputs ------------------------------------------------------------
 
 clean_char_input <- function(x, i, j) {
-  y <- tolower(iconv(x, to = "ASCII//TRANSLIT", sub = ""))
+  y <- toupper(iconv(x, to = "ASCII//TRANSLIT", sub = ""))
   y <- if (grepl("^e-", y)) {
     gsub("[^[:alpha:][:digit:]]-", "", y)
   } else {
@@ -90,8 +81,8 @@ clean_char_input <- function(x, i, j) {
 }
 
 clean_num_input <- function(x, i, j) {
-  y <- tolower(iconv(x, to = "ASCII//TRANSLIT", sub = ""))
-  if (y != "all") {
+  y <- toupper(iconv(x, to = "ASCII//TRANSLIT", sub = ""))
+  if (y != "ALL") {
     y <- gsub("[^[:digit:]]", "", y)
   }
   substr(y, i, j)
@@ -121,7 +112,7 @@ check_partner <- function(p) {
 }
 
 check_commodity <- function(c) {
-  if (!nchar(c) <= 6 || !c %in% c(commodities()$commodity_code)) {
+  if (!nchar(c) <= 6 || !c %in% c(commodities()$commodity_code, "ALL")) {
     return("The specified commodity code is not a valid string. Read the documentation: tradestatistics.io")
   }
   c
@@ -213,12 +204,12 @@ yc <- function(y, c, d) {
   query <- d %>%
     filter(year == y)
 
-  if (c != "all" && nchar(c) != 2) {
+  if (c != "ALL" && nchar(c) != 2) {
     query <- query %>%
       filter(commodity_code == c)
   }
 
-  if (c != "all" && nchar(c) == 2) {
+  if (c != "ALL" && nchar(c) == 2) {
     query <- query %>%
       filter(substr(commodity_code, 1, 2) == c)
   }
@@ -240,12 +231,12 @@ yr <- function(y, r, d) {
   query <- d %>%
     filter(year == y)
 
-  if (r != "all" & (nchar(r) == 3 | grepl("e-", r))) {
+  if (r != "ALL" & (nchar(r) == 3 | grepl("e-", r))) {
     query <- query %>%
       filter(reporter_iso == r)
   }
 
-  if (r != "all" & nchar(r) == 4) {
+  if (r != "ALL" & nchar(r) == 4) {
     r2 <- multiple_reporters(r)
 
     query <- query %>%
@@ -270,24 +261,24 @@ yrc <- function(y, r, c, d) {
   query <- d %>%
     filter(year == y)
 
-  if (r != "all" & (nchar(r) == 3 | grepl("e-", r))) {
+  if (r != "ALL" & (nchar(r) == 3 | grepl("e-", r))) {
     query <- query %>%
       filter(reporter_iso == r)
   }
 
-  if (r != "all" & nchar(r) == 4) {
+  if (r != "ALL" & nchar(r) == 4) {
     r2 <- multiple_reporters(r)
 
     query <- query %>%
       filter(reporter_iso %in% r2)
   }
 
-  if (c != "all" & nchar(c) != 2) {
+  if (c != "ALL" & nchar(c) != 2) {
     query <- query %>%
       filter(commodity_code == c)
   }
 
-  if (c != "all" & nchar(c) == 2) {
+  if (c != "ALL" & nchar(c) == 2) {
     query <- query %>%
       filter(substr(commodity_code, 1, 2) == c)
   }
@@ -310,24 +301,24 @@ yrp <- function(y, r, p, d) {
   query <- d %>%
     filter(year == y)
 
-  if (r != "all" & (nchar(r) == 3 | grepl("e-", r))) {
+  if (r != "ALL" & (nchar(r) == 3 | grepl("e-", r))) {
     query <- query %>%
       filter(reporter_iso == r)
   }
 
-  if (r != "all" & nchar(r) == 4) {
+  if (r != "ALL" & nchar(r) == 4) {
     r2 <- multiple_reporters(r)
 
     query <- query %>%
       filter(reporter_iso %in% r2)
   }
 
-  if (p != "all" & (nchar(p) == 3 | grepl("e-", p))) {
+  if (p != "ALL" & (nchar(p) == 3 | grepl("e-", p))) {
     query <- query %>%
       filter(partner_iso == p)
   }
 
-  if (p != "all" & nchar(p) == 4) {
+  if (p != "ALL" & nchar(p) == 4) {
     p2 <- multiple_partners(p)
 
     query <- query %>%
@@ -350,7 +341,7 @@ yrpc <- function(y, r, p, c, d) {
   p <- check_partner(clean_char_input(p, 1, 5))
   c <- check_commodity(clean_num_input(c, 1, 6))
 
-  if (r == "all" & p == "all") {
+  if (r == "ALL" & p == "ALL") {
     d2 <- tibble(
       year = y,
       reporter_iso = r,
@@ -365,36 +356,36 @@ yrpc <- function(y, r, p, c, d) {
   query <- d %>%
     filter(year == y)
 
-  if (r != "all" & (nchar(r) == 3 | grepl("e-", r))) {
+  if (r != "ALL" & (nchar(r) == 3 | grepl("e-", r))) {
     query <- query %>%
       filter(reporter_iso == r)
   }
 
-  if (r != "all" & nchar(r) == 4) {
+  if (r != "ALL" & nchar(r) == 4) {
     r2 <- multiple_reporters(r)
 
     query <- query %>%
       filter(reporter_iso %in% r2)
   }
 
-  if (p != "all" & (nchar(p) == 3 | grepl("e-", p))) {
+  if (p != "ALL" & (nchar(p) == 3 | grepl("e-", p))) {
     query <- query %>%
       filter(partner_iso == p)
   }
 
-  if (p != "all" & nchar(p) == 4) {
+  if (p != "ALL" & nchar(p) == 4) {
     p2 <- multiple_partners(p)
 
     query <- query %>%
       filter(partner_iso %in% p2)
   }
 
-  if (c != "all" & nchar(c) != 2) {
+  if (c != "ALL" & nchar(c) != 2) {
     query <- query %>%
       filter(commodity_code == c)
   }
 
-  if (c != "all" & nchar(c) == 2) {
+  if (c != "ALL" & nchar(c) == 2) {
     query <- query %>%
       filter(substr(commodity_code, 1, 2) == c)
   }
@@ -412,11 +403,11 @@ yrpc <- function(y, r, p, c, d) {
 # Available years in the DB -----------------------------------------------
 
 min_year <- function() {
-  1980L
+  1988L
 }
 
 max_year <- function() {
-  2021L
+  2023L
 }
 
 # Title and description ---------------------------------------------------
@@ -443,12 +434,6 @@ function() {
 #* @get /countries
 function() {
   countries()
-}
-
-#* Echo back the result of a query on commodities table
-#* @get /countries_colors
-function() {
-  countries_colors()
 }
 
 # Reporters ---------------------------------------------------------------
@@ -491,12 +476,6 @@ function() {
   sections()
 }
 
-#* Echo back the result of a query on commodities table
-#* @get /sections_colors
-function() {
-  sections_colors()
-}
-
 # Commodities ----------------------------------------------------------------
 
 #* Echo back the result of a query on commodities table
@@ -509,6 +488,14 @@ function() {
 #* @get /commodities_short
 function() {
   commodities_short()
+}
+
+# GDP Deflator ------------------------------------------------------------
+
+#* Echo back the result of a query on gdp_deflator table
+#* @get /gdp_deflator
+function() {
+  gdp_deflator()
 }
 
 # YC ----------------------------------------------------------------------
@@ -538,7 +525,7 @@ function(y = NA, r = NA) {
 #* @param r Reporter ISO
 #* @param c Commodity code
 #* @get /yrc
-function(y = NA, r = NA, c = "all") {
+function(y = NA, r = NA, c = "ALL") {
   yrc(y, r, c, tbl(con, "yrc"))
 }
 
@@ -561,7 +548,7 @@ function(y = NA, r = NA, p = NA) {
 #* @param p Partner ISO
 #* @param c Commodity code
 #* @get /yrpc
-function(y = NA, r = NA, p = NA, c = "all") {
+function(y = NA, r = NA, p = NA, c = "ALL") {
   yrpc(y, r, p, c, tbl(con, "yrpc"))
 }
 
