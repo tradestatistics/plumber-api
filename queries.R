@@ -10,7 +10,7 @@ con <- pool::dbPool(
   dbname = Sys.getenv("TRADESTATISTICS_SQL_NAME"),
   host = Sys.getenv("TRADESTATISTICS_SQL_HOST"),
   user = Sys.getenv("TRADESTATISTICS_SQL_USER"),
-  password = Sys.getenv("TRADESTATISTICS_PSQL_ASSWORD"),
+  password = Sys.getenv("TRADESTATISTICS_SQL_PASSWORD"),
   port = Sys.getenv("TRADESTATISTICS_SQL_PORT")
 )
 
