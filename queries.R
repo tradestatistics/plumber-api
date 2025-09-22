@@ -7,11 +7,11 @@ readRenviron("/tradestatistics/plumber-api")
 
 con <- pool::dbPool(
   drv = RPostgres::Postgres(),
-  dbname = Sys.getenv("TRADESTATISTICS_NAME"),
-  host = Sys.getenv("TRADESTATISTICS_HOST"),
-  user = Sys.getenv("TRADESTATISTICS_USER"),
-  password = Sys.getenv("TRADESTATISTICS_PASSWORD"),
-  port = Sys.getenv("TRADESTATISTICS_PORT")
+  dbname = Sys.getenv("TRADESTATISTICS_SQL_NAME"),
+  host = Sys.getenv("TRADESTATISTICS_SQL_HOST"),
+  user = Sys.getenv("TRADESTATISTICS_SQL_USER"),
+  password = Sys.getenv("TRADESTATISTICS_PSQL_ASSWORD"),
+  port = Sys.getenv("TRADESTATISTICS_SQL_PORT")
 )
 
 # Static data -------------------------------------------------------------
